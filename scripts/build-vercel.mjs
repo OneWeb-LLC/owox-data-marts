@@ -30,7 +30,9 @@ await esbuild.build({
   logLevel: 'info',
   legalComments: 'none',
   sourcemap: false,
-  minify: true,
+  // TypeORM column metadata is stored on class fields; identifier minification
+  // produces invalid SQLite like `CREATE TABLE x ()`.
+  minify: false,
   keepNames: true,
   // Native addons, optional Nest/TypeORM drivers, and large CJS SDKs. esbuild
   // cannot load .node kernels; Hugging Face / cloud SDKs bloat the function.
