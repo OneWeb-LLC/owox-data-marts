@@ -5,6 +5,9 @@
  * Nest compiles to CJS and then require()s ESM workspace packages
  * (idp-protocol, better-auth, …). Vercel's Node runtime does not support
  * require(esm), so we convert the graph with esbuild after `npm run build:owox`.
+ *
+ * Heavy CJS SDKs, native addons, and the connector runner stay external so
+ * the function stays under Vercel's size limits and .node files are not parsed.
  */
 import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -27,10 +30,10 @@ await esbuild.build({
   logLevel: 'info',
   legalComments: 'none',
   sourcemap: false,
+  minify: true,
   keepNames: true,
-  // Native addons and optional Nest/TypeORM packages that esbuild cannot bundle.
-  // Databricks SQL ships platform .node kernels; connectors/runner is spawned via
-  // require.resolve(), so both must stay on disk rather than in the CJS bundle.
+  // Native addons, optional Nest/TypeORM drivers, and large CJS SDKs. esbuild
+  // cannot load .node kernels; Hugging Face / cloud SDKs bloat the function.
   external: [
     '*.node',
     'better-sqlite3',
@@ -50,12 +53,22 @@ await esbuild.build({
     'nock',
     'mock-aws-s3',
     'aws-sdk',
+    '@aws-sdk/*',
+    '@google-cloud/*',
+    'googleapis',
+    'google-auth-library',
+    'google-gax',
+    '@grpc/grpc-js',
+    '@grpc/proto-loader',
+    'snowflake-sdk',
+    '@huggingface/transformers',
+    'onnxruntime-node',
+    'swagger-ui-express',
     '@nestjs/microservices',
     '@nestjs/websockets',
     '@nestjs/platform-socket.io',
     'class-transformer/storage',
     'fsevents',
-    'onnxruntime-node',
     'lz4',
     'cpu-features',
     '@databricks/sql',
