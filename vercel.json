@@ -14,7 +14,7 @@
     "api/index.js": {
       "maxDuration": 300,
       "memory": 1024,
-      "includeFiles": "{apps/web/dist/**,packages/*/dist/**,node_modules/better-sqlite3/**}"
+      "includeFiles": "{apps/web/dist/**,packages/*/dist/**,node_modules/better-sqlite3/**,node_modules/@databricks/**,node_modules/@owox/connectors/**}"
     }
   }
 }

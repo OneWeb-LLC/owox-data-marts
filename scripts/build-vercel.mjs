@@ -29,7 +29,10 @@ await esbuild.build({
   sourcemap: false,
   keepNames: true,
   // Native addons and optional Nest/TypeORM packages that esbuild cannot bundle.
+  // Databricks SQL ships platform .node kernels; connectors/runner is spawned via
+  // require.resolve(), so both must stay on disk rather than in the CJS bundle.
   external: [
+    '*.node',
     'better-sqlite3',
     'mysql2',
     'sqlite3',
@@ -55,6 +58,21 @@ await esbuild.build({
     'onnxruntime-node',
     'lz4',
     'cpu-features',
+    '@databricks/sql',
+    '@databricks/*',
+    '@owox/connectors',
+    '@owox/connectors/runner',
+  ],
+  plugins: [
+    {
+      name: 'external-native-addons',
+      setup(build) {
+        build.onResolve({ filter: /\.node$/ }, args => ({
+          path: args.path,
+          external: true,
+        }));
+      },
+    },
   ],
 });
 
