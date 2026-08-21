@@ -16,6 +16,9 @@ export interface StaticAssetsOptions {
 
 const DEFAULT_EXCLUDED_ROUTES = [
   '/api',
+  '/auth',
+  '/health',
+  '/sso',
   '/.well-known',
   '/oauth/authorize',
   '/oauth/token',

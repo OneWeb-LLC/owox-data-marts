@@ -85,7 +85,35 @@ export class TemplateService {
   }
 
   public static renderSignIn(): string {
-    return this.loadTemplate('sign-in.html');
+    const template = this.loadTemplate('sign-in.html');
+    const appId = process.env.OWEB_APP_ID?.trim();
+    const owebUrl = (process.env.OWEB_APP_URL || process.env.VITE_OWEB_APP_URL || '').replace(
+      /\/$/,
+      ''
+    );
+
+    if (!appId || !owebUrl) {
+      return template.replace('<!-- OWEB_CONTINUE_CTA -->', '');
+    }
+
+    const launchUrl = `${owebUrl}/login?launch=${encodeURIComponent(appId)}`;
+    const cta = `
+      <a
+        href="${launchUrl}"
+        class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors"
+      >
+        Continue with OWeb
+      </a>
+      <div class="relative my-6">
+        <div class="absolute inset-0 flex items-center" aria-hidden="true">
+          <div class="w-full border-t border-border"></div>
+        </div>
+        <div class="relative flex justify-center text-xs">
+          <span class="bg-card px-2 text-muted-foreground">or sign in with email</span>
+        </div>
+      </div>
+    `;
+    return template.replace('<!-- OWEB_CONTINUE_CTA -->', cta);
   }
 
   public static renderPasswordSetup(): string {
