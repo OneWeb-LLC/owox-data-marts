@@ -25,7 +25,7 @@ export class TemplateService {
       }
     }
 
-    return candidates[0];
+    return join(currentDir, '..', 'templates', templateName);
   }
 
   public static loadTemplate(templateName: string): string {
