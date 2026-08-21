@@ -7,6 +7,7 @@ import {
   DbType,
   RedactingDataSourceLogger,
   resolveLoggerOptions,
+  resolveTypeOrmGlob,
 } from './data-source-options.config';
 import { getSqliteDatabasePath } from './get-sqlite-database-path';
 
@@ -33,8 +34,10 @@ export function createPluginCollectionsDataSourceOptions(config: ConfigService):
   const dbType = (collectionValue(config, 'PLUGIN_COLLECTIONS_DB_TYPE', 'DB_TYPE')?.trim() ??
     DbType.sqlite) as DbType;
   const baseOptions = {
-    entities: [__dirname + '/../plugin-host/collections/**/*.collection.entity{.ts,.js}'],
-    migrations: [__dirname + '/../plugin-host/collections/migrations/[0-9]*-*.{ts,js}'],
+    entities: process.env.VERCEL
+      ? []
+      : [resolveTypeOrmGlob('plugin-host/collections/**/*.collection.entity{.ts,.js}')],
+    migrations: [resolveTypeOrmGlob('plugin-host/collections/migrations/[0-9]*-*.{ts,js}')],
     migrationsTableName: 'plugin_collections_migrations',
     logger: new RedactingDataSourceLogger(
       createLogger('PluginCollectionsTypeORM') as LoggerService,
