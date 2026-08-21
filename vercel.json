@@ -13,7 +13,7 @@
   "functions": {
     "api/index.js": {
       "maxDuration": 300,
-      "includeFiles": "{apps/web/dist/**,apps/backend/dist/**,packages/*/dist/**,packages/idp-better-auth/src/templates/**,packages/idp-owox-better-auth/src/resources/**}"
+      "includeFiles": "{apps/web/dist/**,packages/*/dist/**,packages/idp-better-auth/src/templates/**,packages/idp-owox-better-auth/src/resources/**}"
     }
   }
 }

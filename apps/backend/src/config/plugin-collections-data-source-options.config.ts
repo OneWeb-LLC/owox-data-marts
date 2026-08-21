@@ -33,17 +33,21 @@ function collectionValue(
 export function createPluginCollectionsDataSourceOptions(config: ConfigService): DataSourceOptions {
   const dbType = (collectionValue(config, 'PLUGIN_COLLECTIONS_DB_TYPE', 'DB_TYPE')?.trim() ??
     DbType.sqlite) as DbType;
+  const isVercel = Boolean(process.env.VERCEL);
   const baseOptions = {
-    entities: process.env.VERCEL
+    entities: isVercel
       ? []
       : [resolveTypeOrmGlob('plugin-host/collections/**/*.collection.entity{.ts,.js}')],
-    migrations: [resolveTypeOrmGlob('plugin-host/collections/migrations/[0-9]*-*.{ts,js}')],
+    migrations: isVercel
+      ? []
+      : [resolveTypeOrmGlob('plugin-host/collections/migrations/[0-9]*-*.{ts,js}')],
+    migrationsRun: false,
+    synchronize: isVercel,
     migrationsTableName: 'plugin_collections_migrations',
     logger: new RedactingDataSourceLogger(
       createLogger('PluginCollectionsTypeORM') as LoggerService,
       resolveLoggerOptions(config.get<string>('TYPEORM_LOGGING', 'error'))
     ),
-    synchronize: false,
   };
 
   if (dbType === DbType.sqlite) {
