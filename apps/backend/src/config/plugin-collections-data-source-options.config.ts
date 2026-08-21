@@ -42,7 +42,7 @@ export function createPluginCollectionsDataSourceOptions(config: ConfigService):
       ? []
       : [resolveTypeOrmGlob('plugin-host/collections/migrations/[0-9]*-*.{ts,js}')],
     migrationsRun: false,
-    synchronize: isVercel,
+    synchronize: false,
     migrationsTableName: 'plugin_collections_migrations',
     logger: new RedactingDataSourceLogger(
       createLogger('PluginCollectionsTypeORM') as LoggerService,

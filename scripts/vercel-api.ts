@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
 type ExpressHandler = (req: IncomingMessage, res: ServerResponse) => void;
@@ -29,7 +30,7 @@ async function getHandler(): Promise<ExpressHandler> {
 export default async function handler(req: IncomingMessage, res: ServerResponse): Promise<void> {
   try {
     const app = await getHandler();
-    app(req, res);
+    await Promise.resolve(app(req, res));
   } catch (error) {
     const err = error instanceof Error ? error : new Error(String(error));
     console.error('OWOX serverless handler failed', err.stack ?? err.message);

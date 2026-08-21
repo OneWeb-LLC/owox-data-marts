@@ -61,7 +61,14 @@ export class SystemTriggerHandlerService implements TriggerHandler<SystemTrigger
 
   async onModuleInit(): Promise<void> {
     await this.discoverProcessors();
-    await this.ensureTriggersFromProcessors();
+    const isExecutionEnabled = this.configService.get<boolean>('SCHEDULER_EXECUTION_ENABLED');
+    if (isExecutionEnabled) {
+      await this.ensureTriggersFromProcessors();
+    } else {
+      this.logger.log(
+        'Skipping system trigger persistence because scheduler execution is disabled'
+      );
+    }
     await this.schedulerFacade.registerTriggerHandler(this);
   }
 

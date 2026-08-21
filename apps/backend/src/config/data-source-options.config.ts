@@ -120,9 +120,7 @@ export function createDataSourceOptions(config: ConfigService): DataSourceOption
     entities: isVercel ? [] : [resolveTypeOrmGlob('**/!(*.collection).entity{.ts,.js}')],
     migrations: isVercel ? [] : [resolveTypeOrmGlob('migrations/[0-9]*-*.{ts,js}')],
     migrationsRun: false,
-    // Ephemeral /tmp sqlite has no durable schema; entity metadata comes from
-    // Nest autoLoadEntities in the bundled handler, not from on-disk globs.
-    synchronize: isVercel,
+    synchronize: false,
     logger: new CustomDataSourceLogger(
       createLogger('TypeORM'),
       resolveLoggerOptions(config.get<string>('TYPEORM_LOGGING', 'error'))
