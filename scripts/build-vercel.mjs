@@ -9,7 +9,7 @@
  * Heavy CJS SDKs, native addons, and the connector runner stay external so
  * the function stays under Vercel's size limits and .node files are not parsed.
  */
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as esbuild from 'esbuild';
@@ -77,6 +77,28 @@ await esbuild.build({
     '@owox/connectors/runner',
   ],
   plugins: [
+    {
+      name: 'polyfill-import-meta-url',
+      setup(build) {
+        // CJS output blanks import.meta.url; rewrite it before that happens so
+        // idp template loaders do not call fileURLToPath(undefined).
+        build.onLoad({ filter: /\.[cm]?[jt]s$/ }, args => {
+          let contents;
+          try {
+            contents = readFileSync(args.path, 'utf8');
+          } catch {
+            return undefined;
+          }
+          if (!contents.includes('import.meta.url')) {
+            return undefined;
+          }
+          return {
+            contents: contents.replaceAll('import.meta.url', JSON.stringify(`file://${args.path}`)),
+            loader: args.path.endsWith('.ts') ? 'ts' : 'js',
+          };
+        });
+      },
+    },
     {
       name: 'external-native-addons',
       setup(build) {
