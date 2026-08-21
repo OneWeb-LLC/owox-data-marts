@@ -12,14 +12,20 @@ const ROLE_DISPLAY_NAMES: Record<string, string> = {
 export class TemplateService {
   private static getTemplatePath(templateName: string): string {
     const currentDir = dirname(fileURLToPath(import.meta.url));
+    const candidates = [
+      join(currentDir, '..', 'templates', templateName),
+      join(currentDir, '..', '..', 'src', 'templates', templateName),
+      join(process.cwd(), 'packages', 'idp-better-auth', 'dist', 'templates', templateName),
+      join(process.cwd(), 'packages', 'idp-better-auth', 'src', 'templates', templateName),
+    ];
 
-    const distPath = join(currentDir, '..', 'templates', templateName);
-    if (existsSync(distPath)) {
-      return distPath;
+    for (const candidate of candidates) {
+      if (existsSync(candidate)) {
+        return candidate;
+      }
     }
 
-    const srcPath = join(currentDir, '..', '..', 'src', 'templates', templateName);
-    return srcPath;
+    return candidates[0];
   }
 
   public static loadTemplate(templateName: string): string {

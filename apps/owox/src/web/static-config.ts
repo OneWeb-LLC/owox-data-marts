@@ -84,6 +84,21 @@ export function setupWebStaticAssets(app: Express, options: StaticAssetsOptions 
  * @returns Path to the dist directory or null if not found
  */
 function getWebDistPath(packageName: string): null | string {
+  if (packageName === '@owox/web') {
+    const envDist = process.env.OWOX_WEB_DIST?.trim();
+    const candidates = [
+      envDist,
+      path.join(process.cwd(), 'apps', 'web', 'dist'),
+      path.join(process.cwd(), 'web', 'dist'),
+    ].filter((value): value is string => Boolean(value));
+
+    for (const distPath of candidates) {
+      if (existsSync(path.join(distPath, 'index.html'))) {
+        return distPath;
+      }
+    }
+  }
+
   try {
     const require = createRequire(import.meta.url);
 

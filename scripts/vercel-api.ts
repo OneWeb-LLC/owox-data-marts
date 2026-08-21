@@ -7,13 +7,6 @@ declare global {
   var __owoxExpressHandler: Promise<ExpressHandler> | undefined;
 }
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-  maxDuration: 300,
-};
-
 async function getHandler(): Promise<ExpressHandler> {
   if (!globalThis.__owoxExpressHandler) {
     globalThis.__owoxExpressHandler = (async () => {

@@ -1,3 +1,5 @@
+import { join } from 'node:path';
+
 /**
  * Apply Vercel / serverless defaults so the Nest + better-auth stack can boot
  * without a writable home directory or a pre-set PUBLIC_ORIGIN.
@@ -27,5 +29,6 @@ export function applyServerlessEnvDefaults(): void {
     process.env.IDP_BETTER_AUTH_SQLITE_DB_PATH ||= '/tmp/owox/idp.db';
     process.env.SCHEDULER_EXECUTION_ENABLED ||= 'false';
     process.env.OWOX_TELEMETRY_DISABLED ||= '1';
+    process.env.OWOX_WEB_DIST ||= join(process.cwd(), 'apps', 'web', 'dist');
   }
 }

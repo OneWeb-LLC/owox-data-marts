@@ -8,6 +8,7 @@ dist/
 /out
 /owox-bundle.js
 /owox-test-bundle.js
+/api/index.js
 *.tsbuildinfo
 
 # Logs
