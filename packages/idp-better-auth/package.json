@@ -40,7 +40,7 @@
     "better-auth": "1.6.25",
     "better-sqlite3": "^12.2.0",
     "cookie-parser": "^1.4.7",
-    "env-paths": "^3.0.0",
+    "env-paths": "^2.2.1",
     "jsonwebtoken": "^9.0.0",
     "mysql2": "^3.14.3"
   },

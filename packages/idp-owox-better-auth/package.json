@@ -35,7 +35,7 @@
     "better-sqlite3": "^12.2.0",
     "cookie-parser": "^1.4.7",
     "ejs": "^3.1.10",
-    "env-paths": "^3.0.0",
+    "env-paths": "^2.2.1",
     "jose": "^6.0.12",
     "mailchecker": "^6.0.19",
     "ms": "^2.1.3",
