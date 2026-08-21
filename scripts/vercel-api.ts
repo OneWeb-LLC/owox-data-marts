@@ -17,13 +17,26 @@ async function getHandler(): Promise<ExpressHandler> {
       const { createOwoxApp } = await import('../apps/owox/dist/create-app.js');
       const { express } = await createOwoxApp({ listen: false, webEnabled: true });
       return express as unknown as ExpressHandler;
-    })();
+    })().catch((error: unknown) => {
+      globalThis.__owoxExpressHandler = undefined;
+      throw error;
+    });
   }
 
   return globalThis.__owoxExpressHandler;
 }
 
 export default async function handler(req: IncomingMessage, res: ServerResponse): Promise<void> {
-  const app = await getHandler();
-  app(req, res);
+  try {
+    const app = await getHandler();
+    app(req, res);
+  } catch (error) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    console.error('OWOX serverless handler failed', err.stack ?? err.message);
+    if (!res.headersSent) {
+      res.statusCode = 500;
+      res.setHeader('content-type', 'text/plain; charset=utf-8');
+      res.end(`${err.name}: ${err.message}\n${err.stack ?? ''}`);
+    }
+  }
 }

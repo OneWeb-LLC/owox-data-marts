@@ -74,9 +74,10 @@ export async function bootstrap(options: BootstrapOptions): Promise<NestExpressA
   app.use(text({ type: 'application/jwt' }));
 
   setupGlobalPipes(app);
-  setupSwagger(app, SWAGGER_PATH);
-
-  app.enableShutdownHooks();
+  if (!process.env.VERCEL) {
+    setupSwagger(app, SWAGGER_PATH);
+    app.enableShutdownHooks();
+  }
 
   // Get ConfigService from the DI container to ensure it has access to all env variables
   const appConfigService = app.get(ConfigService);
