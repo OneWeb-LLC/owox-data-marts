@@ -1,4 +1,5 @@
-import { join } from 'node:path';
+import { mkdirSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 
 /**
  * Apply Vercel / serverless defaults so the Nest + better-auth stack can boot
@@ -30,5 +31,15 @@ export function applyServerlessEnvDefaults(): void {
     process.env.SCHEDULER_EXECUTION_ENABLED ||= 'false';
     process.env.OWOX_TELEMETRY_DISABLED ||= '1';
     process.env.OWOX_WEB_DIST ||= join(process.cwd(), 'apps', 'web', 'dist');
+
+    for (const dbPath of [
+      process.env.SQLITE_DB_PATH,
+      process.env.PLUGIN_COLLECTIONS_SQLITE_DB_PATH,
+      process.env.IDP_BETTER_AUTH_SQLITE_DB_PATH,
+    ]) {
+      if (dbPath && dbPath !== ':memory:') {
+        mkdirSync(dirname(dbPath), { recursive: true });
+      }
+    }
   }
 }
