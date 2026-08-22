@@ -1,1 +1,7 @@
-export { IdpFactory, type IdpFactoryOptions, type IdpProviderType } from './factory.js';
+export {
+  IdpFactory,
+  createIdpFactoryHost,
+  type IdpFactoryHost,
+  type IdpFactoryOptions,
+  type IdpProviderType,
+} from './factory.js';

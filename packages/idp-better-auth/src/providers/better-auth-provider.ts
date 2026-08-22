@@ -122,6 +122,20 @@ export class BetterAuthProvider
     );
   }
 
+  /**
+   * Provision a local better-auth user from an OWeb OneID identity and return
+   * a magic-link URL that establishes a session (used by satellite SSO).
+   */
+  async signInWithOwebUser(email: string, name?: string): Promise<string> {
+    const { userId } = await this.store.createUserStub(email, name);
+    await this.userManagementService.ensureUserInDefaultOrganization(userId, 'admin');
+    if (name) {
+      await this.userManagementService.updateUserName(userId, name);
+    }
+
+    return this.userManagementService.generateMagicLinkForUser(email, 'admin');
+  }
+
   async signInMiddleware(
     req: Request,
     res: Response,

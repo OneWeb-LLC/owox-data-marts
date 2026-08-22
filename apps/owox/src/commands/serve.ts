@@ -1,22 +1,11 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import type { BootstrapOptions, HealthProbeAware } from '@owox/backend';
-import type { IdpProvider } from '@owox/idp-protocol';
 
 import { Flags } from '@oclif/core';
-import { IdpProtocolMiddleware } from '@owox/idp-protocol';
-import cors from 'cors';
-import express from 'express';
 import { existsSync } from 'node:fs';
 
-import { IdpFactory } from '../idp/factory.js';
+import { createOwoxApp } from '../create-app.js';
 import { trackServeStarted } from '../telemetry/index.js';
 import { getPackageInfo } from '../utils/index.js';
-import {
-  buildCorsConfig,
-  registerHealthRoutes,
-  registerPublicFlagsRoute,
-  setupWebStaticAssets,
-} from '../web/index.js';
 import { BaseCommand } from './base.js';
 
 /**
@@ -195,53 +184,16 @@ export default class Serve extends BaseCommand {
 
     this.log(`Starting server on port ${port} with ${logFormat} logs...`);
 
-    const { bootstrap, createHealthProbe, registerPluginCollectionsBodyParser } =
-      await import('@owox/backend');
-
-    const expressApp = express();
-    // Must precede IDP middleware: some providers install Express's default 100 KiB
-    // JSON parser globally, while plugin collection documents are allowed up to 1 MiB.
-    registerPluginCollectionsBodyParser(expressApp);
-    expressApp.set('trust proxy', 1);
-
-    const corsConfig = buildCorsConfig();
-    expressApp.use(cors(corsConfig));
-
-    // Holders for late-bound dependencies used by early health routes
-    let currentIdp: IdpProvider | null = null;
-    let currentBackendApp: HealthProbeAware | null = null;
-    registerHealthRoutes(
-      expressApp,
-      () => currentIdp,
-      () => currentBackendApp,
-      () => this.isShuttingDown
-    );
-
-    const idpProvider = await IdpFactory.createFromEnvironment(this);
-    await idpProvider.initialize();
-    const idpProtocolMiddleware = new IdpProtocolMiddleware(idpProvider);
-    idpProtocolMiddleware.register(expressApp);
-    expressApp.set('idp', idpProvider);
-    currentIdp = idpProvider;
-
-    // Register public route to expose whitelisted flags
-    registerPublicFlagsRoute(expressApp);
-
-    // Configure web static assets if web interface is enabled
-    if (flags['web-enabled']) {
-      const staticAssetsConfigured = setupWebStaticAssets(expressApp);
-
-      if (staticAssetsConfigured) {
-        this.log('Web interface static assets configured');
-      } else {
-        this.warn(' Web static assets not found, continuing without web interface');
-      }
-    } else {
-      this.log('Web interface disabled');
-    }
-
     try {
-      this.app = await bootstrap({ express: expressApp } as BootstrapOptions);
+      const { nestApp } = await createOwoxApp({
+        host: this,
+        isShuttingDown: () => this.isShuttingDown,
+        listen: true,
+        log: (message: string) => this.log(message),
+        warn: (message: string) => this.warn(message),
+        webEnabled: flags['web-enabled'],
+      });
+      this.app = nestApp;
 
       // Remove NestJS's own SIGTERM/SIGINT listeners registered by enableShutdownHooks().
       // serve.ts manages the shutdown sequence itself (drain requests → wait for processes → close app),
@@ -256,8 +208,6 @@ export default class Serve extends BaseCommand {
           }
         }
       }
-
-      currentBackendApp = createHealthProbe(this.app);
 
       this.log(`Process ID: ${process.pid}`);
       this.log(`Server started successfully. Open http://localhost:${port} in your browser.`);

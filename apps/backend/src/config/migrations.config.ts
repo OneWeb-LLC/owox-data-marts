@@ -31,6 +31,10 @@ const logger = createLogger('MigrationAPI');
  */
 export async function runMigrationsIfNeeded(): Promise<void> {
   logger.debug('Checking if migrations should be executed...');
+  if (process.env.VERCEL) {
+    logger.debug('Skipping file-based migrations on Vercel (synchronize handles schema).');
+    return;
+  }
   const config = new ConfigService();
 
   if (!shouldRunMigrations(config)) {

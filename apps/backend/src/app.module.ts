@@ -41,14 +41,18 @@ import {
 
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: async (config: ConfigService) => {
-        return createDataSourceOptions(config);
-      },
+      useFactory: async (config: ConfigService) => ({
+        ...createDataSourceOptions(config),
+        autoLoadEntities: true,
+      }),
       async dataSourceFactory(options) {
         if (!options) {
           throw new Error('Invalid options passed');
         }
-        const dataSource = new DataSource(options);
+        const { autoLoadEntities: _autoLoadEntities, ...typeormOptions } = options as typeof options & {
+          autoLoadEntities?: boolean;
+        };
+        const dataSource = new DataSource(typeormOptions);
         await dataSource.initialize();
         return serializeSqliteTransactions(addTransactionalDataSource(dataSource));
       },
@@ -59,12 +63,16 @@ import {
       useFactory: async (config: ConfigService) => ({
         ...createPluginCollectionsDataSourceOptions(config),
         name: PLUGIN_COLLECTIONS_DATA_SOURCE,
+        autoLoadEntities: true,
       }),
       async dataSourceFactory(options) {
         if (!options) {
           throw new Error('Invalid plugin collections data source options');
         }
-        const dataSource = new DataSource(options);
+        const { autoLoadEntities: _autoLoadEntities, ...typeormOptions } = options as typeof options & {
+          autoLoadEntities?: boolean;
+        };
+        const dataSource = new DataSource(typeormOptions);
         await dataSource.initialize();
         return serializeSqliteTransactions(
           addTransactionalDataSource({

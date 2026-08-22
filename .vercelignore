@@ -1,0 +1,9 @@
+apps/docs
+apps/web/playwright-report
+apps/web/test-results
+coverage
+docs
+test
+**/*.spec.ts
+**/*.test.ts
+.git

@@ -8,8 +8,23 @@ import { loadBetterAuthProviderConfigFromEnv, OwoxBetterAuthIdp } from '@owox/id
 import { IdpConfig, IdpProvider, NullIdpProvider } from '@owox/idp-protocol';
 import { parseMysqlSslEnv } from '@owox/internal-helpers';
 
-import { BaseCommand } from '../commands/base.js';
 import { resolvePublicOrigin } from '../utils/public-origin.js';
+
+/**
+ * Minimal host used by {@link IdpFactory} to report fatal configuration errors.
+ * CLI commands pass `this` (oclif `Command.error`); serverless uses {@link createIdpFactoryHost}.
+ */
+export interface IdpFactoryHost {
+  error(input: Error | string, options?: { code?: string; exit?: false | number }): never;
+}
+
+export function createIdpFactoryHost(): IdpFactoryHost {
+  return {
+    error(input: Error | string): never {
+      throw typeof input === 'string' ? new Error(input) : input;
+    },
+  };
+}
 
 export enum IdpProviderType {
   BetterAuth = 'better-auth',
@@ -26,13 +41,13 @@ export interface IdpFactoryOptions {
  * Factory for creating IDP providers based on configuration
  */
 export class IdpFactory {
-  static async createFromEnvironment(command: BaseCommand): Promise<IdpProvider> {
+  static async createFromEnvironment(host: IdpFactoryHost): Promise<IdpProvider> {
     const providerType = (process.env.IDP_PROVIDER || IdpProviderType.None) as IdpProviderType;
     return this.createProvider(
       {
         provider: providerType,
       },
-      command
+      host
     );
   }
 
@@ -41,13 +56,13 @@ export class IdpFactory {
    */
   static async createProvider(
     options: IdpFactoryOptions,
-    command: BaseCommand
+    host: IdpFactoryHost
   ): Promise<IdpProvider> {
     const { provider } = options;
 
     switch (provider) {
       case IdpProviderType.BetterAuth: {
-        return this.createBetterAuthProvider(command);
+        return this.createBetterAuthProvider(host);
       }
 
       case IdpProviderType.None: {
@@ -55,7 +70,7 @@ export class IdpFactory {
       }
 
       case IdpProviderType.OwoxBetterAuth: {
-        return this.createOwoxBetterAuthProvider(command);
+        return this.createOwoxBetterAuthProvider(host);
       }
 
       default: {
@@ -91,9 +106,9 @@ export class IdpFactory {
     } satisfies MySqlConfig as MySqlConfig;
   }
 
-  private static async createBetterAuthProvider(command: BaseCommand): Promise<BetterAuthProvider> {
+  private static async createBetterAuthProvider(host: IdpFactoryHost): Promise<BetterAuthProvider> {
     if (!process.env.IDP_BETTER_AUTH_SECRET) {
-      command.error('IDP_BETTER_AUTH_SECRET is not set');
+      host.error('IDP_BETTER_AUTH_SECRET is not set');
     }
 
     // Database configuration
@@ -125,7 +140,7 @@ export class IdpFactory {
       }
 
       default: {
-        command.error(`Unsupported database type: ${databaseType}`);
+        host.error(`Unsupported database type: ${databaseType}`);
       }
     }
 
@@ -174,21 +189,21 @@ export class IdpFactory {
    * Creates and initializes an OwoxBetterAuth provider using configuration
    * loaded from the environment. On error, logs it and exits the command.
    *
-   * @param {BaseCommand} command - Command instance for logging and exiting with an error.
+   * @param {IdpFactoryHost} host - Host used to report fatal configuration errors.
    * @returns {Promise<OwoxBetterAuthIdp>} Promise resolving to an initialized OwoxBetterAuth provider.
    */
   private static async createOwoxBetterAuthProvider(
-    command: BaseCommand
+    host: IdpFactoryHost
   ): Promise<OwoxBetterAuthIdp> {
     try {
       const config = loadBetterAuthProviderConfigFromEnv();
       return OwoxBetterAuthIdp.create(config);
     } catch (error: unknown) {
       if (error instanceof Error) {
-        command.error(error, { exit: 1 });
+        host.error(error, { exit: 1 });
       }
 
-      command.error(new Error(String(error)), { exit: 1 });
+      host.error(new Error(String(error)), { exit: 1 });
     }
   }
 }

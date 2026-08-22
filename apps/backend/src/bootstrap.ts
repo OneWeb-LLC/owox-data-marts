@@ -25,6 +25,11 @@ const SWAGGER_PATH = 'swagger-ui';
 
 export interface BootstrapOptions {
   express: Express;
+  /**
+   * When false, initialize Nest without binding a TCP port (Vercel / serverless).
+   * Defaults to true so CLI and standalone `main` keep listening.
+   */
+  listen?: boolean;
 }
 
 export async function bootstrap(options: BootstrapOptions): Promise<NestExpressApplication> {
@@ -69,12 +74,20 @@ export async function bootstrap(options: BootstrapOptions): Promise<NestExpressA
   app.use(text({ type: 'application/jwt' }));
 
   setupGlobalPipes(app);
-  setupSwagger(app, SWAGGER_PATH);
-
-  app.enableShutdownHooks();
+  if (!process.env.VERCEL) {
+    setupSwagger(app, SWAGGER_PATH);
+    app.enableShutdownHooks();
+  }
 
   // Get ConfigService from the DI container to ensure it has access to all env variables
   const appConfigService = app.get(ConfigService);
+
+  if (options.listen === false) {
+    await app.init();
+    logger.log('Application initialized without listening (serverless)');
+    return app;
+  }
+
   const port = appConfigService.get<number>('PORT') || DEFAULT_PORT;
 
   const server = await app.listen(port);

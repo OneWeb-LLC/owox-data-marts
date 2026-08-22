@@ -1,5 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import { parseMysqlSslEnv } from '@owox/internal-helpers';
+import { join } from 'node:path';
 import { DataSourceOptions, Logger, LoggerOptions, LogLevel } from 'typeorm';
 import { createLogger } from '../common/logger/logger.service';
 import { getSqliteDatabasePath } from './get-sqlite-database-path';
@@ -114,14 +115,16 @@ export function createDataSourceOptions(config: ConfigService): DataSourceOption
     `Using DB_TYPE: ${config.get('DB_TYPE') ? `${dbType} (from env)` : `${dbType} (default)`}`
   );
 
+  const isVercel = Boolean(process.env.VERCEL);
   const baseOptions = {
-    entities: [__dirname + '/../**/!(*.collection).entity{.ts,.js}'],
-    migrations: [__dirname + '/../migrations/[0-9]*-*.{ts,js}'],
+    entities: isVercel ? [] : [resolveTypeOrmGlob('**/!(*.collection).entity{.ts,.js}')],
+    migrations: isVercel ? [] : [resolveTypeOrmGlob('migrations/[0-9]*-*.{ts,js}')],
+    migrationsRun: false,
+    synchronize: false,
     logger: new CustomDataSourceLogger(
       createLogger('TypeORM'),
       resolveLoggerOptions(config.get<string>('TYPEORM_LOGGING', 'error'))
     ),
-    synchronize: false,
   };
 
   if (dbType === DbType.sqlite) {
@@ -146,6 +149,25 @@ export function createDataSourceOptions(config: ConfigService): DataSourceOption
   } else {
     throw new Error(`Unsupported DB_TYPE: ${dbType}`);
   }
+}
+
+/**
+ * Resolve a TypeORM glob relative to `src/`. On Vercel the handler is bundled, so
+ * `__dirname` is the function file; compiled entities/migrations are included from
+ * `apps/backend/dist/src`.
+ */
+export function resolveTypeOrmGlob(patternFromSrc: string): string {
+  if (process.env.VERCEL) {
+    return join(
+      process.cwd(),
+      'apps',
+      'backend',
+      'dist',
+      'src',
+      patternFromSrc.replace('{.ts,.js}', '.js')
+    );
+  }
+  return __dirname + '/../' + patternFromSrc;
 }
 
 export function resolveLoggerOptions(value: string): LoggerOptions {
