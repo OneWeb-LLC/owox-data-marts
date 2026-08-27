@@ -11,6 +11,20 @@ export function getOwebAppUrl(): string {
   return fromEnv.replace(/\/$/, '');
 }
 
+export function owebLoginUrl(options?: { launch?: boolean }): string {
+  const url = new URL('/login', getOwebAppUrl());
+  if (options?.launch !== false) {
+    url.searchParams.set('launch', getOwebAppId());
+  }
+  return url.toString();
+}
+
+export function owebOnboardingUrl(): string {
+  const url = new URL('/onboarding', getOwebAppUrl());
+  url.searchParams.set('launch', getOwebAppId());
+  return url.toString();
+}
+
 export function isOwebSatelliteEnabled(): boolean {
   return Boolean(process.env.OWEB_APP_ID?.trim() && process.env.SUPABASE_SERVICE_ROLE_KEY?.trim());
 }
