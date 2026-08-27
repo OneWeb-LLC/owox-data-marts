@@ -1,26 +1,10 @@
-import { BetterAuthProvider } from '@owox/idp-better-auth';
 import type { IdpProvider } from '@owox/idp-protocol';
 import type { Express, Request, Response } from 'express';
 
-import { activateOwoxApp } from './activate.js';
+import { completeSatelliteLogin } from './complete-satellite-login.js';
 import { isOwebSatelliteEnabled } from './constants.js';
-import { upsertOdmProfile, type QueryableDataSource } from './odm-profile.js';
+import type { QueryableDataSource } from './odm-profile.js';
 import { redeemEcosystemLaunchToken } from './redeem-launch-token.js';
-import { supabaseAuthGetUser } from './supabase.js';
-
-type AuthUser = {
-  id?: string;
-  email?: string | null;
-  user_metadata?: {
-    one_id?: string;
-    full_name?: string;
-    name?: string;
-  };
-};
-
-function providerSupportsOwebSignIn(provider: IdpProvider): provider is BetterAuthProvider {
-  return typeof (provider as BetterAuthProvider).signInWithOwebUser === 'function';
-}
 
 function ssoErrorPage(message: string): string {
   const escaped = message.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
@@ -62,34 +46,13 @@ export function registerOwebSsoRoute(
 
     try {
       const redeemed = await redeemEcosystemLaunchToken(launchToken);
-      const authUser = await supabaseAuthGetUser<AuthUser>(redeemed.accessToken);
-      const email = authUser.email?.trim();
-      if (!email) {
-        throw new Error('oweb_user_missing_email');
-      }
-
-      const fullName =
-        authUser.user_metadata?.full_name ||
-        authUser.user_metadata?.name ||
-        authUser.user_metadata?.one_id ||
-        email;
-      const oneId = authUser.user_metadata?.one_id ?? null;
-
-      await activateOwoxApp(redeemed.userId);
-      await upsertOdmProfile(getDataSource(), {
-        id: redeemed.userId,
-        oneId,
-        email,
-        fullName,
+      const magicLink = await completeSatelliteLogin({
+        userId: redeemed.userId,
+        accessToken: redeemed.accessToken,
         orgId: redeemed.orgId,
+        getIdp,
+        getDataSource,
       });
-
-      const idp = getIdp();
-      if (!idp || !providerSupportsOwebSignIn(idp)) {
-        throw new Error('idp_provider_does_not_support_oweb_sso');
-      }
-
-      const magicLink = await idp.signInWithOwebUser(email, fullName);
       return res.redirect(magicLink);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'SSO failed';

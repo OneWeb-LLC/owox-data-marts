@@ -99,10 +99,13 @@ export class TemplateService {
     );
 
     if (!appId || !owebUrl) {
-      return template.replace('<!-- OWEB_CONTINUE_CTA -->', '');
+      return template
+        .replace('<!-- OWEB_CONTINUE_CTA -->', '')
+        .replace('<!-- OWEB_SIGNUP_FOOTER -->', '');
     }
 
     const launchUrl = `${owebUrl}/login?launch=${encodeURIComponent(appId)}`;
+    const signupUrl = `${owebUrl}/signup?launch=${encodeURIComponent(appId)}`;
     const cta = `
       <a
         href="${launchUrl}"
@@ -115,11 +118,19 @@ export class TemplateService {
           <div class="w-full border-t border-border"></div>
         </div>
         <div class="relative flex justify-center text-xs">
-          <span class="bg-card px-2 text-muted-foreground">or sign in with email</span>
+          <span class="bg-card px-2 text-muted-foreground">or sign in with your OWeb OneID</span>
         </div>
       </div>
     `;
-    return template.replace('<!-- OWEB_CONTINUE_CTA -->', cta);
+    const signupFooter = `
+      <p class="mt-4 text-center text-sm text-muted-foreground">
+        Same email and password as oweb.one.
+        <a href="${signupUrl}" class="text-primary hover:text-primary/80 font-medium">Create account on OWeb</a>
+      </p>
+    `;
+    return template
+      .replace('<!-- OWEB_CONTINUE_CTA -->', cta)
+      .replace('<!-- OWEB_SIGNUP_FOOTER -->', signupFooter);
   }
 
   public static renderPasswordSetup(): string {

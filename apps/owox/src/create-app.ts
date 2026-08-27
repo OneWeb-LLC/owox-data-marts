@@ -7,6 +7,7 @@ import cors from 'cors';
 import express, { type Express } from 'express';
 
 import { createIdpFactoryHost, IdpFactory, type IdpFactoryHost } from './idp/factory.js';
+import { registerOwebSatelliteSignInRoute } from './oweb/satellite-sign-in-route.js';
 import { registerOwebSsoRoute } from './oweb/sso-route.js';
 import { applyServerlessEnvDefaults } from './oweb/serverless-env.js';
 import {
@@ -68,12 +69,8 @@ export async function createOwoxApp(options: CreateOwoxAppOptions = {}): Promise
     options.host ?? createIdpFactoryHost()
   );
   await idpProvider.initialize();
-  const idpProtocolMiddleware = new IdpProtocolMiddleware(idpProvider);
-  idpProtocolMiddleware.register(expressApp);
-  expressApp.set('idp', idpProvider);
-  currentIdp = idpProvider;
 
-  registerOwebSsoRoute(expressApp, () => currentIdp, () => {
+  const getOwebDataSource = () => {
     if (!nestApp) {
       return undefined;
     }
@@ -83,7 +80,16 @@ export async function createOwoxApp(options: CreateOwoxAppOptions = {}): Promise
     } catch {
       return undefined;
     }
-  });
+  };
+
+  registerOwebSatelliteSignInRoute(expressApp, () => idpProvider, getOwebDataSource);
+
+  const idpProtocolMiddleware = new IdpProtocolMiddleware(idpProvider);
+  idpProtocolMiddleware.register(expressApp);
+  expressApp.set('idp', idpProvider);
+  currentIdp = idpProvider;
+
+  registerOwebSsoRoute(expressApp, () => currentIdp, getOwebDataSource);
 
   registerPublicFlagsRoute(expressApp);
 
