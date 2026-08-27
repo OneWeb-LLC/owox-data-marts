@@ -137,6 +137,7 @@ export class PageService {
         return;
       }
 
+      let hasPassword = false;
       if (this.userManagementService) {
         try {
           if (session?.user?.id) {
@@ -146,6 +147,9 @@ export class PageService {
             }
 
             await this.userManagementService.addMemberToOrganization(req, role as Role);
+
+            const userDetails = await this.userManagementService.getUserDetails(session.user.id);
+            hasPassword = userDetails?.hasPassword ?? false;
           }
         } catch (error) {
           logger.error(
@@ -159,7 +163,7 @@ export class PageService {
         }
       }
 
-      res.redirect('/auth/setup-password');
+      res.redirect(hasPassword ? '/' : '/auth/setup-password');
     } catch (error) {
       logger.error('Magic link success handler failed', {}, error as Error);
       res.redirect('/auth/sign-in?error=Something went wrong');

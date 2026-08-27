@@ -7,7 +7,7 @@ import type { UserManagementService } from './user-management-service.js';
 describe('PageService magicLinkSuccess', () => {
   let authenticationService: jest.Mocked<Pick<AuthenticationService, 'getSession'>>;
   let userManagementService: jest.Mocked<
-    Pick<UserManagementService, 'addMemberToOrganization' | 'updateUserName'>
+    Pick<UserManagementService, 'addMemberToOrganization' | 'updateUserName' | 'getUserDetails'>
   >;
   let cryptoService: jest.Mocked<Pick<CryptoService, 'decrypt'>>;
   let redirect: jest.Mock;
@@ -21,6 +21,7 @@ describe('PageService magicLinkSuccess', () => {
     userManagementService = {
       addMemberToOrganization: jest.fn().mockResolvedValue(undefined),
       updateUserName: jest.fn().mockResolvedValue(undefined),
+      getUserDetails: jest.fn().mockResolvedValue({ hasPassword: false }),
     };
     cryptoService = {
       decrypt: jest.fn().mockResolvedValue('admin'),
@@ -47,5 +48,25 @@ describe('PageService magicLinkSuccess', () => {
     expect(userManagementService.updateUserName).toHaveBeenCalledWith('user-1', 'New-admin');
     expect(userManagementService.addMemberToOrganization).toHaveBeenCalledWith(req, 'admin');
     expect(redirect).toHaveBeenCalledWith('/auth/setup-password');
+  });
+
+  it('redirects returning users with a password to the app root', async () => {
+    userManagementService.getUserDetails.mockResolvedValue({ hasPassword: true } as never);
+
+    const service = new PageService(
+      authenticationService as unknown as AuthenticationService,
+      userManagementService as unknown as UserManagementService,
+      cryptoService as unknown as CryptoService,
+      { baseURL: 'http://127.0.0.1:3130', secret: 'secret', magicLinkTtl: 3600 }
+    );
+    const req = {
+      query: {},
+      params: { role: 'encrypted.role_segment-token' },
+    } as never;
+    const res = { redirect } as never;
+
+    await service.magicLinkSuccess(req, res);
+
+    expect(redirect).toHaveBeenCalledWith('/');
   });
 });
