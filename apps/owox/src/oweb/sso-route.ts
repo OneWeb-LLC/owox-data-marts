@@ -1,9 +1,10 @@
 import type { IdpProvider } from '@owox/idp-protocol';
 import type { Express, Request, Response } from 'express';
 
+import type { QueryableDataSource } from './odm-profile.js';
+
 import { completeSatelliteLogin } from './complete-satellite-login.js';
 import { isOwebSatelliteEnabled } from './constants.js';
-import type { QueryableDataSource } from './odm-profile.js';
 import { redeemEcosystemLaunchToken } from './redeem-launch-token.js';
 
 function ssoErrorPage(message: string): string {
@@ -47,13 +48,13 @@ export function registerOwebSsoRoute(
     try {
       const redeemed = await redeemEcosystemLaunchToken(launchToken);
       const magicLink = await completeSatelliteLogin({
-        userId: redeemed.userId,
         accessToken: redeemed.accessToken,
-        orgId: redeemed.orgId,
-        getIdp,
         getDataSource,
+        getIdp,
+        orgId: redeemed.orgId,
+        userId: redeemed.userId,
       });
-      return res.redirect(magicLink);
+      return res.redirect(303, magicLink);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'SSO failed';
       console.error('[oweb] SSO failed', message);

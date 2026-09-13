@@ -1,6 +1,28 @@
 import { betterAuth } from 'better-auth';
 import { CryptoService } from './crypto-service.js';
 
+export const MAGIC_LINK_CONFIRM_PATH = '/auth/magic-link';
+export const MAGIC_LINK_VERIFY_PATH = '/auth/better-auth/magic-link/verify';
+
+/**
+ * The email flow rewrites Better Auth's verify URL to a GET-only confirm page
+ * so scanners cannot consume the token. After an already-authenticated login
+ * (OWeb satellite / SSO) the confirm step is unnecessary — convert back to
+ * the Better Auth verify endpoint so the session can be established.
+ */
+export function toMagicLinkVerifyUrl(magicLink: string): string {
+  try {
+    const url = new URL(magicLink);
+    const pathname = url.pathname.replace(/\/$/, '') || '/';
+    if (pathname === MAGIC_LINK_CONFIRM_PATH) {
+      url.pathname = MAGIC_LINK_VERIFY_PATH;
+    }
+    return url.toString();
+  } catch {
+    return magicLink;
+  }
+}
+
 export class MagicLinkService {
   private static readonly DEFAULT_CALLBACK_URL = '/auth/magic-link-success';
 

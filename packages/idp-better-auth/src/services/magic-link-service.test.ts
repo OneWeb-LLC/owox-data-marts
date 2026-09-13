@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import type { CryptoService } from './crypto-service.js';
-import { MagicLinkService } from './magic-link-service.js';
+import {
+  MAGIC_LINK_VERIFY_PATH,
+  MagicLinkService,
+  toMagicLinkVerifyUrl,
+} from './magic-link-service.js';
 
 describe('MagicLinkService', () => {
   beforeEach(() => {
@@ -31,5 +35,31 @@ describe('MagicLinkService', () => {
       'http://127.0.0.1:3130/auth/magic-link-success/encrypted.role_segment-token'
     );
     expect(capturedBody?.callbackURL).not.toContain('?role=');
+  });
+});
+
+describe('toMagicLinkVerifyUrl', () => {
+  it('rewrites the pre-confirm page to Better Auth verify while keeping token and callback', () => {
+    const confirm =
+      'https://owox-data-marts-oweb.vercel.app/auth/magic-link?token=abc&callbackURL=https%3A%2F%2Fowox-data-marts-oweb.vercel.app%2Fauth%2Fmagic-link-success%2Frole';
+
+    const verify = toMagicLinkVerifyUrl(confirm);
+    const url = new URL(verify);
+
+    expect(url.pathname).toBe(MAGIC_LINK_VERIFY_PATH);
+    expect(url.searchParams.get('token')).toBe('abc');
+    expect(url.searchParams.get('callbackURL')).toBe(
+      'https://owox-data-marts-oweb.vercel.app/auth/magic-link-success/role'
+    );
+  });
+
+  it('is idempotent for an already-verify URL', () => {
+    const verify =
+      'https://example.test/auth/better-auth/magic-link/verify?token=t&callbackURL=%2F';
+    expect(toMagicLinkVerifyUrl(verify)).toBe(verify);
+  });
+
+  it('returns the original string when the value is not a URL', () => {
+    expect(toMagicLinkVerifyUrl('not a url')).toBe('not a url');
   });
 });

@@ -1,13 +1,18 @@
 import type { IdpProvider } from '@owox/idp-protocol';
+
 import express, { type Express, type Request, type Response } from 'express';
+
+import type { QueryableDataSource } from './odm-profile.js';
 
 import { completeSatelliteLogin } from './complete-satellite-login.js';
 import { isOwebSatelliteEnabled, owebOnboardingUrl } from './constants.js';
-import type { QueryableDataSource } from './odm-profile.js';
 import { supabaseSignInWithPassword, userHasWorkspace } from './supabase.js';
 
+/** POST-redirect-GET. 302 can preserve POST (browser/host dependent) and then 404s GET-only routes. */
+const SEE_OTHER = 303;
+
 function signInErrorRedirect(res: Response, message: string): void {
-  res.redirect(`/auth/sign-in?error=${encodeURIComponent(message)}`);
+  res.redirect(SEE_OTHER, `/auth/sign-in?error=${encodeURIComponent(message)}`);
 }
 
 function isInvalidCredentialsError(message: string): boolean {
@@ -47,18 +52,18 @@ export function registerOwebSatelliteSignInRoute(
 
       const hasWorkspace = await userHasWorkspace(userId);
       if (!hasWorkspace) {
-        res.redirect(owebOnboardingUrl());
+        res.redirect(SEE_OTHER, owebOnboardingUrl());
         return;
       }
 
       const magicLink = await completeSatelliteLogin({
-        userId,
         accessToken: session.access_token,
         getDataSource,
         getIdp,
+        userId,
       });
 
-      res.redirect(magicLink);
+      res.redirect(SEE_OTHER, magicLink);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Sign in failed';
       if (isInvalidCredentialsError(message)) {

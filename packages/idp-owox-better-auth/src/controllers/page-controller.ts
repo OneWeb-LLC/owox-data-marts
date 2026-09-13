@@ -105,7 +105,9 @@ export class PageController {
   registerRoutes(express: Express): void {
     const signInPath = `${AUTH_BASE_PATH}${ProtocolRoute.SIGN_IN}`;
     express.get(AUTH_BASE_PATH, (_req, res) => res.redirect(signInPath));
-    express.get(`${AUTH_BASE_PATH}/magic-link`, this.magicLinkConfirmPage.bind(this));
+    const magicLinkConfirmPage = this.magicLinkConfirmPage.bind(this);
+    express.get(`${AUTH_BASE_PATH}/magic-link`, magicLinkConfirmPage);
+    express.post(`${AUTH_BASE_PATH}/magic-link`, magicLinkConfirmPage);
     express.get(`${AUTH_BASE_PATH}/forgot-password`, this.forgotPasswordPage.bind(this));
   }
 }
