@@ -74,7 +74,10 @@ describe('PageService magicLinkSuccess', () => {
 describe('PageService magic-link confirm routes', () => {
   it('registers GET and POST /auth/magic-link so a POST-preserving login redirect is not a 404', () => {
     const service = new PageService(
-      { getSession: jest.fn() } as unknown as AuthenticationService,
+      {
+        getSession: jest.fn(),
+        requireAuthMiddleware: jest.fn(),
+      } as unknown as AuthenticationService,
       {
         addMemberToOrganization: jest.fn(),
         updateUserName: jest.fn(),

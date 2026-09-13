@@ -1,9 +1,11 @@
 import type { IdpProvider } from '@owox/idp-protocol';
+
 import express, { type Express, type Request, type Response } from 'express';
+
+import type { QueryableDataSource } from './odm-profile.js';
 
 import { completeSatelliteLogin } from './complete-satellite-login.js';
 import { isOwebSatelliteEnabled, owebOnboardingUrl } from './constants.js';
-import type { QueryableDataSource } from './odm-profile.js';
 import { supabaseSignInWithPassword, userHasWorkspace } from './supabase.js';
 
 /** POST-redirect-GET. 302 can preserve POST (browser/host dependent) and then 404s GET-only routes. */
@@ -55,10 +57,10 @@ export function registerOwebSatelliteSignInRoute(
       }
 
       const magicLink = await completeSatelliteLogin({
-        userId,
         accessToken: session.access_token,
         getDataSource,
         getIdp,
+        userId,
       });
 
       res.redirect(SEE_OTHER, magicLink);

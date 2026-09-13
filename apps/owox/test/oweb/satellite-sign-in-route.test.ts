@@ -1,7 +1,15 @@
 import type { Express, Request, Response } from 'express';
+
 import { expect } from 'chai';
 
+import type { QueryableDataSource } from '../../src/oweb/odm-profile.js';
+
 import { registerOwebSatelliteSignInRoute } from '../../src/oweb/satellite-sign-in-route.js';
+
+function noDataSource(): QueryableDataSource | undefined {
+  // Explicit undefined matches the production getter's return type.
+  return undefined;
+}
 
 describe('registerOwebSatelliteSignInRoute', () => {
   const originalAppId = process.env.OWEB_APP_ID;
@@ -13,6 +21,7 @@ describe('registerOwebSatelliteSignInRoute', () => {
     } else {
       process.env.OWEB_APP_ID = originalAppId;
     }
+
     if (originalServiceRole === undefined) {
       delete process.env.SUPABASE_SERVICE_ROLE_KEY;
     } else {
@@ -26,29 +35,29 @@ describe('registerOwebSatelliteSignInRoute', () => {
 
     const calls: unknown[] = [];
     const app = {
-      use: (...args: unknown[]) => calls.push(['use', args]),
       post: (...args: unknown[]) => calls.push(['post', args]),
+      use: (...args: unknown[]) => calls.push(['use', args]),
     } as unknown as Express;
 
-    registerOwebSatelliteSignInRoute(app, () => null, () => undefined);
+    registerOwebSatelliteSignInRoute(app, () => null, noDataSource);
 
     expect(calls).to.deep.equal([]);
   });
 
-  it('registers POST /auth/api/sign-in and redirects with 303 See Other after success', async () => {
+  it('registers POST /auth/api/sign-in and uses 303 See Other redirects', async () => {
     process.env.OWEB_APP_ID = 'owox';
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-role-key';
 
     let postedHandler: ((req: Request, res: Response) => Promise<void>) | undefined;
     const app = {
-      use() {},
       post(path: unknown, handler: (req: Request, res: Response) => Promise<void>) {
         expect(path).to.deep.equal(['/auth/api/sign-in', '/auth/api/sign-in/']);
         postedHandler = handler;
       },
+      use() {},
     } as unknown as Express;
 
-    registerOwebSatelliteSignInRoute(app, () => null, () => undefined);
+    registerOwebSatelliteSignInRoute(app, () => null, noDataSource);
 
     expect(postedHandler).to.be.a('function');
 

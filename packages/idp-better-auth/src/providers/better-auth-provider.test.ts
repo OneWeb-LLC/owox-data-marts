@@ -65,6 +65,20 @@ jest.unstable_mockModule('../auth/auth-config.js', () => ({
 }));
 
 jest.unstable_mockModule('../services/magic-link-service.js', () => ({
+  MAGIC_LINK_CONFIRM_PATH: '/auth/magic-link',
+  MAGIC_LINK_VERIFY_PATH: '/auth/better-auth/magic-link/verify',
+  toMagicLinkVerifyUrl: (magicLink: string) => {
+    try {
+      const url = new URL(magicLink);
+      const pathname = url.pathname.replace(/\/$/, '') || '/';
+      if (pathname === '/auth/magic-link') {
+        url.pathname = '/auth/better-auth/magic-link/verify';
+      }
+      return url.toString();
+    } catch {
+      return magicLink;
+    }
+  },
   MagicLinkService: jest.fn().mockImplementation(() => ({
     generateMagicLink: jest.fn(),
   })),
