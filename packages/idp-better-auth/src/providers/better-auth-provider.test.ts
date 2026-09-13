@@ -103,6 +103,8 @@ jest.unstable_mockModule('../services/user-management-service.js', () => ({
     removeUser: jest.fn(),
     getUserRole: jest.fn(),
     inviteAndCreateStub: jest.fn(),
+    generateMagicLinkForUser: jest.fn(),
+    updateUserName: jest.fn(),
   })),
 }));
 
@@ -161,6 +163,9 @@ function createStoreMock(): jest.Mocked<DatabaseStore> {
     getUserRole: jest.fn<DatabaseStore['getUserRole']>().mockResolvedValue(null),
     getUsersForAdmin: jest.fn<DatabaseStore['getUsersForAdmin']>().mockResolvedValue([]),
     getUserDetails: jest.fn<DatabaseStore['getUserDetails']>().mockResolvedValue(null),
+    createUserStub: jest
+      .fn<DatabaseStore['createUserStub']>()
+      .mockResolvedValue({ userId: 'user-1', created: true }),
   } as unknown as jest.Mocked<DatabaseStore>;
 }
 
@@ -873,6 +878,29 @@ describe('BetterAuthProvider', () => {
       await expect(
         provider.verifyMcpAccessToken('token-1', 'https://mcp.owox.com/mcp', ['mcp:read'])
       ).resolves.toBeNull();
+    });
+  });
+
+  describe('signInWithOwebUser', () => {
+    it('returns the Better Auth verify URL so login is not stranded on the GET-only confirm page', async () => {
+      store.createUserStub.mockResolvedValue({ userId: 'user-1', created: true });
+      const provider = await createProvider();
+      const userMgmt = getUserManagementServiceFromProvider(provider);
+      userMgmt.ensureUserInDefaultOrganization.mockResolvedValue(undefined);
+      userMgmt.updateUserName.mockResolvedValue(undefined);
+      userMgmt.generateMagicLinkForUser.mockResolvedValue(
+        'https://owox-data-marts-oweb.vercel.app/auth/magic-link?token=abc&callbackURL=https%3A%2F%2Fowox-data-marts-oweb.vercel.app%2Fauth%2Fmagic-link-success%2Frole'
+      );
+
+      const url = await provider.signInWithOwebUser('user@example.com', 'User');
+
+      expect(store.createUserStub).toHaveBeenCalledWith('user@example.com', 'User');
+      expect(userMgmt.ensureUserInDefaultOrganization).toHaveBeenCalledWith('user-1', 'admin');
+      expect(userMgmt.updateUserName).toHaveBeenCalledWith('user-1', 'User');
+      expect(userMgmt.generateMagicLinkForUser).toHaveBeenCalledWith('user@example.com', 'admin');
+      expect(url).toBe(
+        'https://owox-data-marts-oweb.vercel.app/auth/better-auth/magic-link/verify?token=abc&callbackURL=https%3A%2F%2Fowox-data-marts-oweb.vercel.app%2Fauth%2Fmagic-link-success%2Frole'
+      );
     });
   });
 });

@@ -225,7 +225,11 @@ export class PageService {
         this.authenticationService.requireAuthMiddleware.bind(this.authenticationService),
         this.adminResetUserPassword.bind(this)
       );
-      express.get('/auth/magic-link', this.magicLinkConfirm.bind(this));
+      // Accept POST as well: satellite login POSTs credentials then redirects
+      // to this URL, and some hosts/browsers preserve POST across 302.
+      const magicLinkConfirm = this.magicLinkConfirm.bind(this);
+      express.get('/auth/magic-link', magicLinkConfirm);
+      express.post('/auth/magic-link', magicLinkConfirm);
     } catch (error) {
       logger.error('Failed to register page routes', {}, error as Error);
       throw new Error('Failed to register page routes');

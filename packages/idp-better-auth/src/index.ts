@@ -4,7 +4,12 @@ export { createBetterAuthConfig } from './auth/auth-config.js';
 
 // Services
 export { TemplateService } from './services/template-service.js';
-export { MagicLinkService } from './services/magic-link-service.js';
+export {
+  MAGIC_LINK_CONFIRM_PATH,
+  MAGIC_LINK_VERIFY_PATH,
+  MagicLinkService,
+  toMagicLinkVerifyUrl,
+} from './services/magic-link-service.js';
 export { PageService } from './services/page-service.js';
 export { AuthenticationService } from './services/authentication-service.js';
 export { TokenService } from './services/token-service.js';

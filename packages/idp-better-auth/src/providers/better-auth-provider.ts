@@ -35,7 +35,7 @@ import { Express, type Request, Response, NextFunction } from 'express';
 import express from 'express';
 import { BetterAuthConfig } from '../types/index.js';
 import { createBetterAuthConfig } from '../auth/auth-config.js';
-import { MagicLinkService } from '../services/magic-link-service.js';
+import { MagicLinkService, toMagicLinkVerifyUrl } from '../services/magic-link-service.js';
 import { CryptoService } from '../services/crypto-service.js';
 import { AuthenticationService } from '../services/authentication-service.js';
 import { TokenService } from '../services/token-service.js';
@@ -133,7 +133,8 @@ export class BetterAuthProvider
       await this.userManagementService.updateUserName(userId, name);
     }
 
-    return this.userManagementService.generateMagicLinkForUser(email, 'admin');
+    const magicLink = await this.userManagementService.generateMagicLinkForUser(email, 'admin');
+    return toMagicLinkVerifyUrl(magicLink);
   }
 
   async signInMiddleware(

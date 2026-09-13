@@ -53,7 +53,7 @@ export function registerOwebSsoRoute(
         getIdp,
         getDataSource,
       });
-      return res.redirect(magicLink);
+      return res.redirect(303, magicLink);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'SSO failed';
       console.error('[oweb] SSO failed', message);

@@ -70,3 +70,37 @@ describe('PageService magicLinkSuccess', () => {
     expect(redirect).toHaveBeenCalledWith('/');
   });
 });
+
+describe('PageService magic-link confirm routes', () => {
+  it('registers GET and POST /auth/magic-link so a POST-preserving login redirect is not a 404', () => {
+    const service = new PageService(
+      { getSession: jest.fn() } as unknown as AuthenticationService,
+      {
+        addMemberToOrganization: jest.fn(),
+        updateUserName: jest.fn(),
+        getUserDetails: jest.fn(),
+      } as unknown as UserManagementService,
+      { decrypt: jest.fn() } as unknown as CryptoService,
+      { baseURL: 'http://127.0.0.1:3130', secret: 'secret', magicLinkTtl: 3600 }
+    );
+
+    const registered: Array<{ method: string; path: string }> = [];
+    const express = {
+      get(path: string) {
+        registered.push({ method: 'get', path });
+      },
+      post(path: string, ..._handlers: unknown[]) {
+        registered.push({ method: 'post', path });
+      },
+    };
+
+    service.registerRoutes(express as never);
+
+    expect(registered).toEqual(
+      expect.arrayContaining([
+        { method: 'get', path: '/auth/magic-link' },
+        { method: 'post', path: '/auth/magic-link' },
+      ])
+    );
+  });
+});
