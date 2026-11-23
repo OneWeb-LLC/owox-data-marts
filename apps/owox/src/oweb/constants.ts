@@ -1,5 +1,14 @@
 export const DEFAULT_OWEB_APP_ID = 'owox';
+
+/** OWeb control plane — login, signup, onboarding, App Store SSO mint (not Supabase Auth). */
 export const DEFAULT_OWEB_APP_URL = 'https://oweb.one';
+
+/**
+ * Shared One OS Supabase Auth custom domain. Set `SUPABASE_URL` / client env to this on
+ * constellation satellites (e.g. oMetrics). Corpus / GHI tenants use their own auth project.
+ */
+export const DEFAULT_ONE_OS_SUPABASE_AUTH_URL = 'https://auth.oweb.one';
+
 export const DEFAULT_ACTIVATION_KIND = 'session';
 
 export function getOwebAppId(): string {
